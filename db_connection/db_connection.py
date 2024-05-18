@@ -140,11 +140,12 @@ class DBConnection:
     
 
     def search_games(self, query: str = None, min_price: int = None,
-                     max_price: int = None, min_year: int = None, max_year: int = None,
-                     genres: list[str] = None, tags: list[str] = None, publishers: list[str] = None, developers: list[str] = None,
-                     score: int = None, sort: str = 'score', sort_direction: str = 'DESC') -> list[dict]:
+                 max_price: int = None, min_year: int = None, max_year: int = None,
+                 genres: list[str] = None, tags: list[str] = None, publishers: list[str] = None, developers: list[str] = None,
+                 score: int = None, sort: str = 'score', sort_direction: str = 'DESC') -> list[dict]:
         cursor = self.conn.cursor()
         try:
+            # Base query
             base_query = sql.SQL("""
                 SELECT 
                     g.game_id, 
@@ -180,8 +181,10 @@ class DBConnection:
                 ) ph ON true
             """)
 
+            # Filters
             filters = []
             params = []
+
             if query:
                 filters.append("g.title ILIKE %s")
                 params.append(f"%{query}%")
@@ -198,25 +201,57 @@ class DBConnection:
             if max_year is not None:
                 filters.append("EXTRACT(YEAR FROM g.release_date) <= %s")
                 params.append(max_year)
-            if genres:
-                filters.append("gnr.genre_name ILIKE ANY(%s)")
-                params.append(genres)
-            if tags:
-                filters.append("tg.tag_name ILIKE ANY(%s)")
-                params.append(tags)
-            if publishers:
-                filters.append("pub.publisher_name ILIKE ANY(%s)")
-                params.append(publishers)
-            if developers:
-                filters.append("dev.developer_name ILIKE ANY(%s)")
-                params.append(developers)
             if score is not None:
                 filters.append("g.positive_reviews::float / g.total_reviews * 100 >= %s AND g.total_reviews > 10")
                 params.append(score)
 
-            where_clause = "\tWHERE " + " AND ".join(filters)
-
+            # Subqueries for genres, tags, developers, publishers
+            if genres:
+                genre_ids_query = """
+                    SELECT gg.game_id
+                    FROM game_genres gg
+                    JOIN genres gnr ON gg.genre_id = gnr.genre_id
+                    WHERE gnr.genre_name ILIKE ANY(%s)
+                    GROUP BY gg.game_id
+                """
+                filters.append("g.game_id IN (" + genre_ids_query + ")")
+                params.append(genres)
             
+            if tags:
+                tag_ids_query = """
+                    SELECT gt.game_id
+                    FROM game_tags gt
+                    JOIN tags tg ON gt.tag_id = tg.tag_id
+                    WHERE tg.tag_name ILIKE ANY(%s)
+                    GROUP BY gt.game_id
+                """
+                filters.append("g.game_id IN (" + tag_ids_query + ")")
+                params.append(tags)
+            
+            if developers:
+                developer_ids_query = """
+                    SELECT gd.game_id
+                    FROM game_developers gd
+                    JOIN developers dev ON gd.developer_id = dev.developer_id
+                    WHERE dev.developer_name ILIKE ANY(%s)
+                    GROUP BY gd.game_id
+                """
+                filters.append("g.game_id IN (" + developer_ids_query + ")")
+                params.append(developers)
+            
+            if publishers:
+                publisher_ids_query = """
+                    SELECT gp.game_id
+                    FROM game_publishers gp
+                    JOIN publishers pub ON gp.publisher_id = pub.publisher_id
+                    WHERE pub.publisher_name ILIKE ANY(%s)
+                    GROUP BY gp.game_id
+                """
+                filters.append("g.game_id IN (" + publisher_ids_query + ")")
+                params.append(publishers)
+
+            where_clause = "WHERE " + " AND ".join(filters) if filters else ""
+
             # Adding sort column and direction to the query
             final_query = base_query + sql.SQL(where_clause) + sql.SQL("""
                 GROUP BY 
@@ -235,10 +270,10 @@ class DBConnection:
                 sort=sql.Identifier(sort),
                 sort_direction=sql.SQL(sort_direction.upper())
             )
-            print(where_clause)
+
             cursor.execute(final_query, params)
             results = cursor.fetchall()
-            
+
             colnames = [desc[0] for desc in cursor.description]
             games_info = [dict(zip(colnames, result)) for result in results]
             return games_info
@@ -247,6 +282,7 @@ class DBConnection:
             return []
         finally:
             cursor.close()
+
 
     def get_game_ids(self) -> list[int]:
         cursor = self.conn.cursor()
