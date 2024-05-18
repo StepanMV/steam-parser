@@ -63,6 +63,7 @@ class DBConnection:
                     ORDER BY ph1.date_time DESC
                     LIMIT 1
                 ) ph ON true
+                WHERE g.game_id = %s
                 GROUP BY 
                     g.game_id, 
                     g.title, 
@@ -198,16 +199,16 @@ class DBConnection:
                 filters.append("EXTRACT(YEAR FROM g.release_date) <= %s")
                 params.append(max_year)
             if genres:
-                filters.append("gnr.genre_name = ANY(%s)")
+                filters.append("gnr.genre_name ILIKE ANY(%s)")
                 params.append(genres)
             if tags:
-                filters.append("tg.tag_name = ANY(%s)")
+                filters.append("tg.tag_name ILIKE ANY(%s)")
                 params.append(tags)
             if publishers:
-                filters.append("pub.publisher_name = ANY(%s)")
+                filters.append("pub.publisher_name ILIKE ANY(%s)")
                 params.append(publishers)
             if developers:
-                filters.append("dev.developer_name = ANY(%s)")
+                filters.append("dev.developer_name ILIKE ANY(%s)")
                 params.append(developers)
             if score is not None:
                 filters.append("g.positive_reviews::float / g.total_reviews * 100 >= %s AND g.total_reviews > 10")
@@ -234,6 +235,7 @@ class DBConnection:
                 sort=sql.Identifier(sort),
                 sort_direction=sql.SQL(sort_direction.upper())
             )
+            print(where_clause)
             cursor.execute(final_query, params)
             results = cursor.fetchall()
             

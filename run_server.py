@@ -13,6 +13,7 @@ def search():
     max_year = request.args.get('max_year', type=int)
     genres = request.args.getlist('genres[]')
     tags = request.args.getlist('tags[]')
+    print(tags)
     publishers = request.args.getlist('publishers[]')
     developers = request.args.getlist('developers[]')
     score = request.args.get('score', type=int)
