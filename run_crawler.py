@@ -51,7 +51,7 @@ def sanitize_data(data: dict, translation_data: dict) -> dict:
 async def main():
     loop = asyncio.get_event_loop()
     steam_crawler = SteamCrawler()
-    db_connection = DBConnection("localhost", 5432, "steam", "twinkboy42", "0847")
+    db_connection = DBConnection("localhost", 5432, "steam", "twinkboy42", "twinkboy42")
     game_ids = set(db_connection.get_game_ids())
     processed_game_ids = set()
     loop.create_task(steam_crawler.run())

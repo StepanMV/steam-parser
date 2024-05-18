@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from db_connection import DBConnection
 
 app = Flask(__name__)
-db_connection = DBConnection("localhost")
+db_connection = DBConnection("localhost", 5432, "steam", "twinkboy42", "twinkboy42")
 
 @app.route('/api/v1/search', methods=['GET'])
 def search(self):
