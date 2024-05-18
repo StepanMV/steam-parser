@@ -7,21 +7,22 @@ db_connection = DBConnection("localhost", 5432, "steam", "twinkboy42", "twinkboy
 @app.route('/api/v1/search', methods=['GET'])
 def search():
     query = request.args.get('query')
-    score = request.args.get('score')
-    genres = request.args.getlist('genres')
-    tags = request.args.getlist('tags')
-    developers = request.args.getlist('developers')
-    publishers = request.args.getlist('publishers')
-    min_price = request.args.get('min_price')
-    max_price = request.args.get('max_price')
-    min_year = request.args.get('min_year')
-    max_year = request.args.get('max_year')
-    sort = request.args.get('sort')
-    sort_direction = request.args.get('sort_direction')
+    min_price = request.args.get('min_price', type=float)
+    max_price = request.args.get('max_price', type=float)
+    min_year = request.args.get('min_year', type=int)
+    max_year = request.args.get('max_year', type=int)
+    genres = request.args.getlist('genres[]')
+    tags = request.args.getlist('tags[]')
+    publishers = request.args.getlist('publishers[]')
+    developers = request.args.getlist('developers[]')
+    score = request.args.get('score', type=int)
+    sort = request.args.get('sort') if request.args.get('sort') else 'score'
+    sort_direction = request.args.get('sort_direction') if request.args.get('sort_direction') else 'DESC'
+
     res = db_connection.search_games(query=query, score=score, genres=genres, tags=tags,
-                                            developers=developers, publishers=publishers, min_price=min_price,
-                                            max_price=max_price, min_year=min_year, max_year=max_year,
-                                            sort=sort, sort_direction=sort_direction)
+                                     developers=developers, publishers=publishers, min_price=min_price,
+                                     max_price=max_price, min_year=min_year, max_year=max_year,
+                                     sort=sort, sort_direction=sort_direction)
     return jsonify(res)
 
 
