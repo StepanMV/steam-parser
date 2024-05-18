@@ -17,11 +17,11 @@ def search():
     min_year = request.args.get('min_year')
     max_year = request.args.get('max_year')
     sort = request.args.get('sort')
-    sort_order = request.args.get('sort_order')
+    sort_direction = request.args.get('sort_direction')
     res = db_connection.search_games(query=query, score=score, genres=genres, tags=tags,
                                             developers=developers, publishers=publishers, min_price=min_price,
                                             max_price=max_price, min_year=min_year, max_year=max_year,
-                                            sort=sort, sort_order=sort_order)
+                                            sort=sort, sort_direction=sort_direction)
     return jsonify(res)
 
 
