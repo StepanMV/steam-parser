@@ -5,7 +5,7 @@ app = Flask(__name__)
 db_connection = DBConnection("localhost", 5432, "steam", "twinkboy42", "twinkboy42")
 
 @app.route('/api/v1/search', methods=['GET'])
-def search(self):
+def search():
     query = request.args.get('query')
     score = request.args.get('score')
     genres = request.args.getlist('genres')
@@ -26,16 +26,16 @@ def search(self):
 
 
 @app.route('/api/v1/games/<id>', methods=['GET'])
-def get_game(self, id):
+def get_game(id):
     res = db_connection.get_game_info(id)
     return jsonify(res)
 
 
 @app.route('/api/v1/prices/<id>', methods=['GET'])
-def get_prices(self, id):
+def get_prices(id):
     res = db_connection.get_game_prices(id)
     return jsonify(res)
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=8000)
