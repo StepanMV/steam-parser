@@ -158,7 +158,7 @@ class SteamCrawler:
         for game_id, game_page, game_url in zip(game_ids, game_pages, game_urls):
             try:
                 game_info = self.get_game_info(scroll_page, game_page, game_id)
-                game_info['link'] = game_url
+                game_info['link'] = game_url.split('?')[0]
                 games_info.append(game_info)
             except AttributeError as e:
                 print(f"Failed to fetch game info for game {game_info['title']}")

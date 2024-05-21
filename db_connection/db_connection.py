@@ -26,7 +26,7 @@ class DBConnection:
         }
 
 
-    def get_game_info(self, game_id: int) -> list[dict]:
+    def get_game_info(self, steam_id: int) -> list[dict]:
         cursor = self.conn.cursor()
         try:
             query = sql.SQL("""
@@ -62,7 +62,7 @@ class DBConnection:
                     ORDER BY ph1.date_time DESC
                     LIMIT 1
                 ) ph ON true
-                WHERE g.game_id = %s
+                WHERE g.steam_id = %s
                 GROUP BY 
                     g.game_id, 
                     g.title, 
@@ -77,7 +77,7 @@ class DBConnection:
             """)
             
             # Executing the query
-            cursor.execute(query, (game_id,))
+            cursor.execute(query, (steam_id,))
             
             # Fetching all results
             result = cursor.fetchone()
