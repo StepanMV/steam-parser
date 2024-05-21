@@ -58,13 +58,11 @@ async def main():
     while steam_crawler.games_processed < steam_crawler.total_games:
         if steam_crawler.datastream:
             data = steam_crawler.datastream.pop(0)
-            if data['game_id'] in processed_game_ids:
-                continue
             db_connection.update_translation_data(data)
             data = sanitize_data(data, db_connection.translation_data)
-            db_connection.add_or_update_game_info(data)
-            db_connection.update_game_data(data)
-            processed_game_ids.add(data['game_id'])
+            game_id = db_connection.add_or_update_game_info(data)
+            db_connection.update_game_data(game_id, data)
+            processed_game_ids.add(game_id)
         else:
             print(steam_crawler.games_processed, steam_crawler.total_games)
             await asyncio.sleep(1)

@@ -147,7 +147,7 @@ class SteamCrawler:
     def get_game_info(self, search_page: str, game_page: str, appid: int) -> dict:
         game_info_main = self._get_game_info_main(search_page, appid)
         game_info_detail = self._get_game_info_detail(game_page)
-        return {**game_info_main, **game_info_detail, "game_id": appid}
+        return {**game_info_main, **game_info_detail, "steam_id": appid}
     
     async def get_games_info(self, i: int) -> list[dict]:
         scroll_page = await self.fetch_scroll_page(i)
@@ -155,12 +155,13 @@ class SteamCrawler:
         game_ids = self.get_game_ids(game_urls)
         game_pages = await self.fetch_game_pages(game_urls)
         games_info = []
-        for game_id, game_page in zip(game_ids, game_pages):
+        for game_id, game_page, game_url in zip(game_ids, game_pages, game_urls):
             try:
                 game_info = self.get_game_info(scroll_page, game_page, game_id)
+                game_info['link'] = game_url
                 games_info.append(game_info)
-            except AttributeError:
-                print(f"Failed to fetch game info for game {game_id}")
+            except AttributeError as e:
+                print(f"Failed to fetch game info for game {game_info['title']}")
             finally:
                 self.games_processed += 1
         return games_info

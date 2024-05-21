@@ -31,8 +31,9 @@ class DBConnection:
         try:
             query = sql.SQL("""
                 SELECT 
-                    g.game_id, 
+                    g.steam_id,
                     g.title, 
+                    g.link,
                     g.available, 
                     g.release_date, 
                     g.supports_win, 
@@ -144,8 +145,9 @@ class DBConnection:
             # Base query
             base_query = sql.SQL("""
                 SELECT 
-                    g.game_id, 
+                    g.steam_id,
                     g.title, 
+                    g.link,
                     g.available, 
                     g.release_date, 
                     g.supports_win, 
@@ -477,8 +479,7 @@ class DBConnection:
             if new_translation_data["genres"]:
                 self.translation_data = new_translation_data
     
-    def update_game_data(self, game_data: dict) -> None:
-        game_id = game_data['game_id']
+    def update_game_data(self, game_id: int, game_data: dict) -> None:
         self.game_data['genres'][game_id] = game_data['genres']
         self.game_data['tags'][game_id] = game_data['tags']
         self.game_data['publishers'][game_id] = game_data['publishers']
@@ -624,42 +625,51 @@ class DBConnection:
             print(f"SQL Error on process_game_price: {e}")
         finally:
             cursor.close()
-    
-    def add_or_update_game_info(self, game_info: dict) -> None:
+
+
+    def add_or_update_game_info(self, game_info: dict) -> int:
         cursor = self.conn.cursor()
-        game_id = game_info["game_id"]
         try:
             query = sql.SQL("""
-                INSERT INTO games (game_id, title, available, release_date, supports_win, supports_linux, supports_mac, positive_reviews, total_reviews)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (game_id) DO UPDATE
+                INSERT INTO games (steam_id, title, link, available, release_date, supports_win, supports_linux, supports_mac, positive_reviews, total_reviews)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (steam_id) DO UPDATE
                 SET title = EXCLUDED.title,
+                    link = EXCLUDED.link,
                     available = EXCLUDED.available,
                     release_date = EXCLUDED.release_date,
                     supports_win = EXCLUDED.supports_win,
                     supports_linux = EXCLUDED.supports_linux,
                     supports_mac = EXCLUDED.supports_mac,
                     positive_reviews = EXCLUDED.positive_reviews,
-                    total_reviews = EXCLUDED.total_reviews;
+                    total_reviews = EXCLUDED.total_reviews
+                RETURNING game_id;
             """)
-            cursor.execute(query, (game_info["game_id"], game_info["title"], game_info["available"], game_info["release_date"],
-                                   game_info["supports_win"], game_info["supports_linux"], game_info["supports_mac"],
-                                   game_info["positive_reviews"], game_info["total_reviews"]))
+            
+            cursor.execute(query, (game_info["steam_id"], game_info["title"], game_info["link"], game_info["available"], game_info["release_date"],
+                                game_info["supports_win"], game_info["supports_linux"], game_info["supports_mac"],
+                                game_info["positive_reviews"], game_info["total_reviews"]))
+            game_id = cursor.fetchone()[0]
+
             self.conn.commit()
+
             old_genres = self.game_data["genres"].get(game_id, [])
-            self._process_game_genres(game_info["game_id"], old_genres, game_info["genres"])
+            self._process_game_genres(game_id, old_genres, game_info["genres"])
             old_tags = self.game_data["tags"].get(game_id, [])
-            self._process_game_tags(game_info["game_id"], old_tags, game_info["tags"])
+            self._process_game_tags(game_id, old_tags, game_info["tags"])
             old_publishers = self.game_data["publishers"].get(game_id, [])
-            self._process_game_publishers(game_info["game_id"], old_publishers, game_info["publishers"])
+            self._process_game_publishers(game_id, old_publishers, game_info["publishers"])
             old_developers = self.game_data["developers"].get(game_id, [])
-            self._process_game_developers(game_info["game_id"], old_developers, game_info["developers"])
-            self._process_game_price(game_info["game_id"], game_info["price_wo_discount"], game_info["price_w_discount"])
+            self._process_game_developers(game_id, old_developers, game_info["developers"])
+            self._process_game_price(game_id, game_info["price_wo_discount"], game_info["price_w_discount"])
+            return game_id
+
         except Exception as e:
-            raise e
             print(f"SQL Error on add_or_update_game_info: {e}")
+            return None
         finally:
             cursor.close()
+
     
     def set_unavailable_games(self, game_ids: list[int]) -> None:
         cursor = self.conn.cursor()

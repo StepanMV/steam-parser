@@ -20,6 +20,8 @@ CREATE TABLE tags (
 
 CREATE TABLE games (
     game_id SERIAL PRIMARY KEY,
+    steam_id INT UNIQUE,
+    link TEXT,
     available BOOL,
     title TEXT,
     release_date DATE,
