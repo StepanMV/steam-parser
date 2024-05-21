@@ -44,9 +44,7 @@ class DBConnection:
                     array_agg(DISTINCT tg.tag_name) AS tags,
                     array_agg(DISTINCT dev.developer_name) AS developers,
                     array_agg(DISTINCT pub.publisher_name) AS publishers,
-                    ph.price_wo_discount AS last_price_wo_discount,
-                    ph.price_w_discount AS last_price_w_discount,
-                    ph.date_time AS last_price_date_time
+                    ph.price_w_discount AS last_price
                 FROM games g
                 LEFT JOIN game_genres gg ON g.game_id = gg.game_id
                 LEFT JOIN genres gnr ON gg.genre_id = gnr.genre_id
@@ -57,7 +55,7 @@ class DBConnection:
                 LEFT JOIN game_publishers gp ON g.game_id = gp.game_id
                 LEFT JOIN publishers pub ON gp.publisher_id = pub.publisher_id
                 LEFT JOIN LATERAL (
-                    SELECT ph1.price_wo_discount, ph1.price_w_discount, ph1.date_time
+                    SELECT ph1.price_w_discount, ph1.date_time
                     FROM price_history ph1
                     WHERE ph1.game_id = g.game_id
                     ORDER BY ph1.date_time DESC
@@ -74,9 +72,7 @@ class DBConnection:
                     g.supports_mac, 
                     g.positive_reviews, 
                     g.total_reviews, 
-                    ph.price_wo_discount, 
-                    ph.price_w_discount, 
-                    ph.date_time;
+                    ph.price_w_discount;
             """)
             
             # Executing the query
